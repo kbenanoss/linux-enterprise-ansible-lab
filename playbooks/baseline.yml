@@ -1,0 +1,70 @@
+---
+- name: Apply Linux server baseline
+  hosts: linux_servers
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install baseline administration packages
+      ansible.builtin.dnf:
+        name: "{{ baseline_packages }}"
+        state: present
+
+    - name: Install Chrony
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+
+    - name: Enable and start Chrony
+      ansible.builtin.service:
+        name: chronyd
+        state: started
+        enabled: true
+
+    - name: Create operations administrator
+      ansible.builtin.user:
+        name: "{{ admin_username }}"
+        comment: Operations Administrator
+        groups: wheel
+        append: true
+        create_home: true
+        shell: /bin/bash
+        state: present
+
+    - name: Create SSH directory for operations administrator
+      ansible.builtin.file:
+        path: "/home/{{ admin_username }}/.ssh"
+        state: directory
+        owner: "{{ admin_username }}"
+        group: "{{ admin_username }}"
+        mode: "0700"
+
+    - name: Install SSH public key for operations administrator
+      ansible.builtin.copy:
+        src: "{{ admin_public_key_file }}"
+        dest: "/home/{{ admin_username }}/.ssh/authorized_keys"
+        owner: "{{ admin_username }}"
+        group: "{{ admin_username }}"
+        mode: "0600"
+
+    - name: Configure administrative sudo policy
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/{{ admin_username }}"
+        owner: root
+        group: root
+        mode: "0440"
+        validate: "/usr/sbin/visudo -cf %s"
+        content: |
+          {{ admin_username }} ALL=(ALL) NOPASSWD: ALL
+
+    - name: Configure managed login message
+      ansible.builtin.copy:
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          Authorized access only.
+          Host: {{ ansible_hostname }}
+          Operating system: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Managed by Ansible. Manual configuration changes may be overwritten.

@@ -1,0 +1,9 @@
+*.retry
+*.log
+*.pem
+*.key
+.vault_pass
+vault_password*
+secrets.yml
+*.tar
+*.tar.gz
