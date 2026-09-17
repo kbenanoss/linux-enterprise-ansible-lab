@@ -1,0 +1,55 @@
+---
+- name: Configure enterprise web servers
+  hosts: linux_servers
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install Nginx and firewalld
+      ansible.builtin.dnf:
+        name:
+          - nginx
+          - firewalld
+          - python3-firewall
+        state: present
+
+    - name: Enable and start firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Permit SSH through the firewall
+      ansible.posix.firewalld:
+        service: ssh
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Permit HTTP through the firewall
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Deploy server-specific homepage
+      ansible.builtin.template:
+        src: "../templates/index.html.j2"
+        dest: /usr/share/nginx/html/index.html
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload Nginx
+
+    - name: Enable and start Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
