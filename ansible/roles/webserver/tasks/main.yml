@@ -1,0 +1,38 @@
+---
+# tasks file for roles/webserver
+
+- name: Install web-server packages
+  ansible.builtin.dnf:
+    name: "{{ webserver_packages }}"
+    state: present
+
+- name: Enable and start firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Permit required firewall services
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ webserver_firewall_services }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Deploy server-specific homepage
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload Nginx
+
+- name: Enable and start Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true

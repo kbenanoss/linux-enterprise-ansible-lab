@@ -1,0 +1,65 @@
+---
+# tasks file for roles/common
+- name: Install common administration packages
+  ansible.builtin.dnf:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Install Chrony
+  ansible.builtin.dnf:
+    name: chrony
+    state: present
+
+- name: Enable and start Chrony
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: true
+
+- name: Create operations administrator
+  ansible.builtin.user:
+    name: "{{ common_admin_username }}"
+    comment: Operations Administrator
+    groups: wheel
+    append: true
+    create_home: true
+    shell: /bin/bash
+    state: present
+
+- name: Create administrator SSH directory
+  ansible.builtin.file:
+    path: "/home/{{ common_admin_username }}/.ssh"
+    state: directory
+    owner: "{{ common_admin_username }}"
+    group: "{{ common_admin_username }}"
+    mode: "0700"
+
+- name: Install administrator SSH public key
+  ansible.builtin.copy:
+    src: "{{ common_admin_public_key_file }}"
+    dest: "/home/{{ common_admin_username }}/.ssh/authorized_keys"
+    owner: "{{ common_admin_username }}"
+    group: "{{ common_admin_username }}"
+    mode: "0600"
+
+- name: Configure administrative sudo policy
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ common_admin_username }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "/usr/sbin/visudo -cf %s"
+    content: |
+      {{ common_admin_username }} ALL=(ALL) NOPASSWD: ALL
+
+- name: Configure managed login message
+  ansible.builtin.copy:
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Authorized access only.
+      Host: {{ ansible_hostname }}
+      Operating system: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      Managed by Ansible. Manual configuration changes may be overwritten.

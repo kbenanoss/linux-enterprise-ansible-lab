@@ -1,0 +1,11 @@
+---
+# defaults file for roles/webserver
+
+webserver_packages:
+  - nginx
+  - firewalld
+  - python3-firewall
+
+webserver_firewall_services:
+  - ssh
+  - http

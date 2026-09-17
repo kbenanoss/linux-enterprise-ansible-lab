@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Linux Lab</title>
+</head>
+<body>
+    <h1>Enterprise Linux Lab</h1>
+    <p>This server is managed by Ansible.</p>
+
+    <h2>Server information</h2>
+    <ul>
+        <li>Hostname: {{ ansible_hostname }}</li>
+        <li>Management IP address: {{ ansible_host }}</li>
+        <li>Operating system: {{ ansible_distribution }} {{ ansible_distribution_version }}</li>
+        <li>Kernel: {{ ansible_kernel }}</li>
+    </ul>
+</body>
+</html>
